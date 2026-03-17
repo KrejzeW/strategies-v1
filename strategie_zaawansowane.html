@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strategie Zaawansowane</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #111318;
+    --bg3: #181c23;
+    --border: #1e2530;
+    --green: #00e5a0;
+    --blue: #0099ff;
+    --red: #ff4466;
+    --yellow: #ffc94d;
+    --purple: #b06aff;
+    --orange: #ff8c42;
+    --teal: #00d4d4;
+    --text: #e8eaf0;
+    --muted: #5a6070;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh; padding: 32px 16px 48px;
+    background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(176,106,255,0.05) 0%, transparent 60%);
+  }
+
+  .header { text-align:center; margin-bottom:36px; animation: fadeDown 0.5s ease both; }
+  .tag { font-size:9px; letter-spacing:0.35em; text-transform:uppercase; color:var(--purple); display:block; margin-bottom:10px; }
+  .header h1 {
+    font-family:'Syne',sans-serif; font-size:clamp(24px,5vw,42px);
+    font-weight:800; letter-spacing:-0.02em;
+    background: linear-gradient(135deg, #fff 0%, var(--purple) 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .header p { color:var(--muted); font-size:11px; margin-top:8px; letter-spacing:0.1em; }
+
+  .tabs {
+    display:flex; gap:6px; margin-bottom:24px;
+    max-width:900px; margin-left:auto; margin-right:auto;
+    overflow-x:auto; padding-bottom:4px; scrollbar-width:none;
+  }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab {
+    flex-shrink:0; padding:8px 14px; border-radius:10px;
+    border:1px solid var(--border); background:var(--bg2);
+    color:var(--muted); font-family:'JetBrains Mono',monospace;
+    font-size:10px; letter-spacing:0.1em; cursor:pointer;
+    transition:all 0.2s; white-space:nowrap;
+  }
+  .tab:hover { color:var(--text); border-color:var(--muted); }
+  .tab.active { color:#0a0c0f; font-weight:600; border-color:transparent; }
+
+  .panel { display:none; max-width:900px; margin:0 auto; animation:fadeUp 0.35s ease both; }
+  .panel.active { display:block; }
+
+  .pgrid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:640px) { .pgrid { grid-template-columns:1fr; } }
+  .full { grid-column:1/-1; }
+
+  .card {
+    background:var(--bg2); border:1px solid var(--border);
+    border-radius:14px; padding:20px; position:relative; overflow:hidden;
+  }
+  .card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg, transparent, var(--c, var(--purple)), transparent);
+    opacity:0.5;
+  }
+  .card-label {
+    font-size:9px; letter-spacing:0.25em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:14px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .card-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  .info-row {
+    display:flex; align-items:flex-start; gap:10px;
+    padding:8px 0; border-bottom:1px solid var(--border); font-size:11px;
+  }
+  .info-row:last-child { border-bottom:none; }
+  .info-icon { font-size:14px; flex-shrink:0; width:20px; text-align:center; margin-top:1px; }
+  .info-text { color:var(--muted); line-height:1.6; flex:1; }
+  .info-text strong { color:var(--text); }
+
+  .tf-badge {
+    display:inline-block; padding:3px 8px; border-radius:6px;
+    font-size:9px; letter-spacing:0.15em; font-weight:600;
+    border:1px solid; margin-right:4px; margin-bottom:4px;
+  }
+  .tf-best { border-color:var(--green); color:var(--green); background:rgba(0,229,160,0.08); }
+  .tf-ok   { border-color:var(--yellow); color:var(--yellow); background:rgba(255,201,77,0.08); }
+  .tf-bad  { border-color:var(--red); color:var(--red); background:rgba(255,68,102,0.08); }
+
+  .ind-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .chip {
+    padding:4px 10px; border-radius:20px; font-size:9px;
+    letter-spacing:0.1em; font-weight:600; border:1px solid;
+  }
+
+  .dir-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .dir-card { padding:14px; border-radius:12px; border:1px solid var(--border); background:var(--bg3); }
+  .dir-card.long { border-left:3px solid var(--green); }
+  .dir-card.short { border-left:3px solid var(--red); }
+  .dir-title { font-size:10px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:10px; }
+  .dir-title.g { color:var(--green); }
+  .dir-title.r { color:var(--red); }
+  .dir-item { font-size:10px; color:var(--muted); line-height:1.6; display:flex; gap:6px; margin-bottom:4px; }
+  .dir-item .n { flex-shrink:0; }
+  .dir-item.g .n { color:var(--green); }
+  .dir-item.r .n { color:var(--red); }
+
+  .note {
+    padding:12px 14px; background:var(--bg3); border-radius:10px;
+    border-left:3px solid; font-size:10px; color:var(--muted);
+    line-height:1.6; margin-top:10px;
+  }
+  .note strong { color:var(--text); }
+
+  /* CHECKLIST */
+  .checklist { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .chk-row {
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px; background:var(--bg3); border-radius:10px;
+    border:1px solid var(--border); cursor:pointer;
+    transition:all 0.2s; user-select:none;
+  }
+  .chk-row:hover { border-color:var(--muted); }
+  .chk-dot { width:11px; height:11px; border-radius:50%; background:var(--border); flex-shrink:0; transition:all 0.25s; }
+  .chk-row.on  { border-color:rgba(0,229,160,0.3); background:rgba(0,229,160,0.04); }
+  .chk-row.on  .chk-dot { background:var(--green); box-shadow:0 0 8px rgba(0,229,160,0.5); }
+  .chk-row.on  .chk-label { color:var(--text); }
+  .chk-row.on-s { border-color:rgba(255,68,102,0.3); background:rgba(255,68,102,0.04); }
+  .chk-row.on-s .chk-dot { background:var(--red); box-shadow:0 0 8px rgba(255,68,102,0.5); }
+  .chk-row.on-s .chk-label { color:var(--text); }
+  .chk-label { font-size:11px; color:var(--muted); line-height:1.4; }
+
+  .dir-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+  .db {
+    padding:12px; border-radius:10px; border:1px solid var(--border);
+    background:var(--bg3); color:var(--muted); font-family:'JetBrains Mono',monospace;
+    font-size:12px; cursor:pointer; text-align:center; transition:all 0.2s; letter-spacing:0.1em;
+  }
+  .db:hover { border-color:var(--muted); color:var(--text); }
+  .db.al { border-color:var(--green); background:rgba(0,229,160,0.08); color:var(--green); }
+  .db.as { border-color:var(--red); background:rgba(255,68,102,0.08); color:var(--red); }
+
+  .counter { display:flex; gap:6px; justify-content:center; margin-bottom:12px; }
+  .cdot { height:5px; border-radius:3px; background:var(--border); transition:all 0.3s; width:20px; }
+  .cdot.fl { background:var(--green); box-shadow:0 0 6px rgba(0,229,160,0.4); }
+  .cdot.fs { background:var(--red); box-shadow:0 0 6px rgba(255,68,102,0.4); }
+
+  .verdict {
+    padding:16px; border-radius:12px; border:1px solid var(--border);
+    background:var(--bg3); text-align:center; transition:all 0.3s;
+  }
+  .verdict.vl { border-color:rgba(0,229,160,0.35); background:rgba(0,229,160,0.05); }
+  .verdict.vs { border-color:rgba(255,68,102,0.35); background:rgba(255,68,102,0.05); }
+  .verdict.vw { border-color:rgba(255,201,77,0.3); background:rgba(255,201,77,0.04); }
+  .v-lbl { font-size:9px; letter-spacing:0.3em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .v-txt { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; color:var(--muted); transition:color 0.3s; }
+  .verdict.vl .v-txt { color:var(--green); }
+  .verdict.vs .v-txt { color:var(--red); }
+  .verdict.vw .v-txt { color:var(--yellow); }
+
+  .reset-btn {
+    display:block; width:100%; margin-top:10px; padding:9px;
+    background:none; border:1px solid var(--border); border-radius:9px;
+    color:var(--muted); font-family:'JetBrains Mono',monospace;
+    font-size:9px; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; transition:all 0.2s;
+  }
+  .reset-btn:hover { border-color:var(--muted); color:var(--text); }
+
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeUp   { from{opacity:0;transform:translateY(14px)}  to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="tag">Advanced Strategies — Level 2</span>
+  <h1>5 Zaawansowanych<br>Strategii</h1>
+  <p>Bollinger · Supertrend · Ichimoku · Stochastic · VWAP</p>
+</div>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" onclick="switchTab(0)">① BB + RSI</div>
+  <div class="tab" onclick="switchTab(1)">② Supertrend + MACD</div>
+  <div class="tab" onclick="switchTab(2)">③ Ichimoku Cloud</div>
+  <div class="tab" onclick="switchTab(3)">④ Stochastic + Pivot</div>
+  <div class="tab" onclick="switchTab(4)">⑤ VWAP + Volume</div>
+</div>
+
+<!-- ===== PANEL 1: BOLLINGER BANDS + RSI ===== -->
+<div class="panel active" id="p0">
+  <div class="pgrid">
+    <div class="card full" style="--c:#b06aff">
+      <div class="card-label">Opis strategii</div>
+      <div class="info-row">
+        <span class="info-icon">📖</span>
+        <span class="info-text"><strong>Bollinger Bands + RSI — Mean Reversion</strong><br>
+        Bollinger Bands tworzą "kopertę" wokół ceny (±2 odchylenia standardowe od MA20). Gdy cena dotyka górnej bandy i RSI jest wykupiony — sprzedaj. Gdy dotyka dolnej i RSI wyprzedany — kup. Cena zawsze wraca do środka (mean reversion).</span>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">⏱</span>
+        <span class="info-text"><strong>Timeframe:</strong><br>
+          <span class="tf-badge tf-best">15MIN ✓✓✓</span>
+          <span class="tf-badge tf-best">1H ✓✓✓</span>
+          <span class="tf-badge tf-best">4H ✓✓✓</span>
+          <span class="tf-badge tf-ok">5MIN ✓✓</span>
+          <span class="tf-badge tf-ok">DAILY ✓</span>
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">🔧</span>
+        <span class="info-text"><strong>Ustawienia:</strong> BB(20, 2.0) + RSI(14). Na 5 min użyj BB(20,1.8) — węższe pasma lepiej działają na krótkich TF.</span>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">⚠️</span>
+        <span class="info-text"><strong>Pułapka:</strong> W silnym trendzie cena może "iść wzdłuż" górnej/dolnej bandy przez długi czas. Zawsze sprawdź czy nie ma silnego trendu przed użyciem tej strategii.</span>
+      </div>
+      <div class="ind-chips">
+        <span class="chip" style="border-color:var(--purple);color:var(--purple)">Bollinger Bands</span>
+        <span class="chip" style="border-color:var(--blue);color:var(--blue)">RSI(14)</span>
+      </div>
+    </div>
+    <div class="card" style="--c:#b06aff">
+      <div class="card-label">Kiedy wchodzić</div>
+      <div class="dir-cards">
+        <div class="dir-card long">
+          <div class="dir-title g">▲ LONG</div>
+          <div class="dir-item g"><span class="n">1.</span><span>Cena dotknęła lub wyszła poniżej dolnej bandy BB</span></div>
+          <div class="dir-item g"><span class="n">2.</span><span>RSI poniżej 30 (wyprzedany)</span></div>
+          <div class="dir-item g"><span class="n">3.</span><span>Świeca zamknęła się z powrotem WEWNĄTRZ pasm BB</span></div>
+          <div class="dir-item g"><span class="n">TP.</span><span>Środkowa banda BB (MA20) lub górna banda</span></div>
+          <div class="dir-item g"><span class="n">SL.</span><span>Poniżej ostatniego dołka świecy</span></div>
+        </div>
+        <div class="dir-card short">
+          <div class="dir-title r">▼ SHORT</div>
+          <div class="dir-item r"><span class="n">1.</span><span>Cena dotknęła lub wyszła powyżej górnej bandy BB</span></div>
+          <div class="dir-item r"><span class="n">2.</span><span>RSI powyżej 70 (wykupiony)</span></div>
+          <div class="dir-item r"><span class="n">3.</span><span>Świeca zamknęła się z powrotem WEWNĄTRZ pasm BB</span></div>
+          <div class="dir-item r"><span class="n">TP.</span><span>Środkowa banda BB (MA20) lub dolna banda</span></div>
+          <div class="dir-item r"><span class="n">SL.</span><span>Powyżej ostatniego szczytu świecy</span></div>
+        </div>
+      </div>
+      <div class="note" style="border-color:var(--purple)">💡 <strong>Pro tip:</strong> Gdy pasma BB są bardzo wąskie (Squeeze) — rynek zbiera energię przed dużym ruchem. Po Squeeze wejdź w kierunku przebicia z potwierdzeniem wolumenu.</div>
+    </div>
+    <div class="card" style="--c:#b06aff">
+      <div class="card-label">Checklist sygnału</div>
+      <div class="dir-btns"><div class="db" id="p0bl" onclick="sd(0,'long')">▲ LONG</div><div class="db" id="p0bs" onclick="sd(0,'short')">▼ SHORT</div></div>
+      <div class="checklist" id="p0cl">
+        <div class="chk-row" onclick="tc(0,0)"><div class="chk-dot" id="p0d0"></div><span class="chk-label" id="p0l0">Cena dotknęła dolnej bandy BB</span></div>
+        <div class="chk-row" onclick="tc(0,1)"><div class="chk-dot" id="p0d1"></div><span class="chk-label" id="p0l1">RSI poniżej 30 (wyprzedany)</span></div>
+        <div class="chk-row" onclick="tc(0,2)"><div class="chk-dot" id="p0d2"></div><span class="chk-label" id="p0l2">Świeca zamknęła się z powrotem wewnątrz pasm</span></div>
+      </div>
+      <div class="counter" id="p0ct"><div class="cdot" id="p0c0"></div><div class="cdot" id="p0c1"></div><div class="cdot" id="p0c2"></div></div>
+      <div class="verdict" id="p0v"><div class="v-lbl">Sygnał</div><div class="v-txt" id="p0vt">— Wybierz kierunek —</div></div>
+      <button class="reset-btn" onclick="rs(0)">↺ Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PANEL 2: SUPERTREND + MACD ===== -->
+<div class="panel" id="p1">
+  <div class="pgrid">
+    <div class="card full" style="--c:#ff8c42">
+      <div class="card-label">Opis strategii</div>
+      <div class="info-row">
+        <span class="info-icon">📖</span>
+        <span class="info-text"><strong>Supertrend + MACD — Trend Following z Momentum</strong><br>
+        Supertrend to wskaźnik który maluje zieloną linię pod ceną (trend wzrostowy) lub czerwoną nad ceną (trend spadkowy). MACD potwierdza że momentum jest w tym samym kierunku. Razem dają bardzo czytelne sygnały.</span>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">⏱</span>
+        <span class="info-text"><strong>Timeframe:</strong><br>
+          <span class="tf-badge tf-best">1H ✓✓✓</span>
+          <span class="tf-badge tf-best">4H ✓✓✓</span>
+          <span class="tf-badge tf-best">DAILY ✓✓✓</span>
+          <span class="tf-badge tf-ok">15MIN ✓✓</span>
+          <span class="tf-badge tf-bad">5MIN ✗</span>
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">🔧</span>
+        <span class="info-text"><strong>Ustawienia:</strong> Supertrend(10, 3.0) + MACD(12,26,9). Supertrend zmienia kolor automatycznie gdy trend się odwraca — to główny sygnał wejścia.</span>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">⚠️</span>
+        <span class="info-text"><strong>Uwaga:</strong> Supertrend może dawać fałszywe sygnały przy bocznym rynku (ranging). MACD jako filtr eliminuje większość fałszywych wejść.</span>
+      </div>
+      <div class="ind-chips">
+        <span class="chip" style="border-color:var(--orange);color:var(--orange)">SuperTrend(10,3)</span>
+        <span class="chip" style="border-color:var(--blue);color:var(--blue)">MACD(12,26,9)</span>
+        <span class="chip" style="border-color:var(--muted);color:var(--muted)">ATR(10)</span>
+      </div>
+    </div>
+    <div class="card" style="--c:#ff8c42">
+      <div class="card-label">Kiedy wchodzić</div>
+      <div class="dir-cards">
+        <div class="dir-card long">
+          <div class="dir-title g">▲ LONG</div>
+          <div class="dir-item g"><span class="n">1.</span><span>Supertrend zmienia kolor na ZIELONY (linia pojawia się pod ceną)</span></div>
+          <div class="dir-item g"><span class="n">2.</span><span>MACD histogram przechodzi na DODATNI (powyżej zera)</span></div>
+          <div class="dir-item g"><span class="n">3.</span><span>Cena powyżej linii Supertrend</span></div>
+          <div class="dir-item g"><span class="n">SL.</span><span>Linia Supertrend (podążaj za nią)</span></div>
+          <div class="dir-item g"><span class="n">TP.</span><span>Wyjdź gdy Supertrend zmienia kolor na czerwony</span></div>
+        </div>
+        <div class="dir-card short">
+          <div class="dir-title r">▼ SHORT</div>
+          <div class="dir-item r"><span class="n">1.</span><span>Supertrend zmienia kolor na CZERWONY (linia pojawia się nad ceną)</span></div>
+          <div class="dir-item r"><span class="n">2.</span><span>MACD histogram przechodzi na UJEMNY (poniżej zera)</span></div>
+          <div class="dir-item r"><span class="n">3.</span><span>Cena poniżej linii Supertrend</span></div>
+          <div class="dir-item r"><span class="n">SL.</span><span>Linia Supertrend (podążaj za nią)</span></div>
+          <div class="dir-item r"><span class="n">TP.</span><span>Wyjdź gdy Supertrend zmienia kolor na zielony</span></div>
+        </div>
+      </div>
+      <div class="note" style="border-color:var(--orange)">🎯 <strong>Trailing Stop:</strong> To jedyna strategia gdzie Stop Loss się przesuwa — linia Supertrend automatycznie podąża za ceną. Trzymaj pozycję dopóki kolor się nie zmieni — to może być bardzo długi trend!</div>
+    </div>
+    <div class="card" style="--c:#ff8c42">
+      <div class="card-label">Checklist sygnału</div>
+      <div class="dir-btns"><div class="db" id="p1bl" onclick="sd(1,'long')">▲ LONG</div><div class="db" id="p1bs" onclick="sd(1,'short')">▼ SHORT</div></div>
+      <div class="checklist" id="p1cl">
+        <div class="chk-row" onclick="tc(1,0)"><div class="chk-dot" id="p1d0"></div><span class="chk-label" id="p1l0">Supertrend zmienił kolor na zielony</span></div>
+        <div class="chk-row" onclick="tc(1,1)"><div class="chk-dot" id="p1d1"></div><span class="chk-label" id="p1l1">MACD histogram powyżej zera (dodatni)</span></div>
+        <div class="chk-row" onclick="tc(1,2)"><div class="chk-dot" id="p1d2"></div><span class="chk-label" id="p1l2">Cena powyżej linii Supertrend</span></div>
+      </div>
+      <div class="counter" id="p1ct"><div class="cdot" id="p1c0"></div><div class="cdot" id="p1c1"></div><div class="cdot" id="p1c2"></div></div>
+      <div class="verdict" id="p1v"><div class="v-lbl">Sygnał</div><div class="v-txt" id="p1vt">— Wybierz kierunek —</div></div>
+      <button class="reset-btn" onclick="rs(1)">↺ Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PANEL 3: ICHIMOKU CLOUD ===== -->
+<div class="panel" id="p2">
+  <div class="pgrid">
+    <div class="card full" style="--c:#00d4d4">
+      <div class="card-label">Opis strategii</div>
+      <div class="info-row">
+        <span class="info-icon">📖</span>
+        <span class="info-text"><strong>Ichimoku Cloud — Kompletny System</strong><br>
+        Ichimoku to 5 wskaźników w jednym: Tenkan-sen (linia 9), Kijun-sen (linia 26), Senkou Span A+B (tworzy "chmurę"), Chikou Span (linia opóźniona). Chmura to strefa wsparcia/oporu. Gdy cena jest nad chmurą = byczo. Gdy pod = niedźwiedzio.</span>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">⏱</span>
+        <span class="info-text"><strong>Timeframe:</strong><br>
+          <span class="tf-badge tf-best">DAILY ✓✓✓</span>
+          <span class="tf-badge tf-best">4H ✓✓✓</span>
+          <span class="tf-badge tf-ok">1H ✓✓</span>
+          <span class="tf-badge tf-bad">15MIN ✗</span>
+          <span class="tf-badge tf-bad">5MIN ✗</span>
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">🔧</span>
+        <span class="info-text"><strong>Składniki:</strong> Tenkan (9) = krótkoterminowy trend | Kijun (26) = średnioterminowy trend | Chmura = strefa S/R | Chikou = potwierdzenie historyczne</span>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">💡</span>
+        <span class="info-text"><strong>Kluczowa zasada:</strong> Im grubsza chmura, tym silniejsza strefa wsparcia/oporu. Cienka chmura = słaba strefa, łatwo przebić.</span>
+      </div>
+      <div class="ind-chips">
+        <span class="chip" style="border-color:var(--teal);color:var(--teal)">Ichimoku Cloud</span>
+        <span class="chip" style="border-color:var(--muted);color:var(--muted)">Tenkan-sen (9)</span>
+        <span class="chip" style="border-color:var(--muted);color:var(--muted)">Kijun-sen (26)</span>
+      </div>
+    </div>
+    <div class="card" style="--c:#00d4d4">
+      <div class="card-label">Kiedy wchodzić</div>
+      <div class="dir-cards">
+        <div class="dir-card long">
+          <div class="dir-title g">▲ LONG (TK Cross)</div>
+          <div class="dir-item g"><span class="n">1.</span><span>Cena POWYŻEJ chmury (Kumo)</span></div>
+          <div class="dir-item g"><span class="n">2.</span><span>Tenkan-sen przecina Kijun-sen od dołu w górę</span></div>
+          <div class="dir-item g"><span class="n">3.</span><span>Chmura przed nami jest ZIELONA (Span A > Span B)</span></div>
+          <div class="dir-item g"><span class="n">4.</span><span>Chikou Span powyżej ceny sprzed 26 świec</span></div>
+          <div class="dir-item g"><span class="n">SL.</span><span>Górna krawędź chmury (Kumo)</span></div>
+        </div>
+        <div class="dir-card short">
+          <div class="dir-title r">▼ SHORT (TK Cross)</div>
+          <div class="dir-item r"><span class="n">1.</span><span>Cena PONIŻEJ chmury (Kumo)</span></div>
+          <div class="dir-item r"><span class="n">2.</span><span>Tenkan-sen przecina Kijun-sen od góry w dół</span></div>
+          <div class="dir-item r"><span class="n">3.</span><span>Chmura przed nami jest CZERWONA (Span B > Span A)</span></div>
+          <div class="dir-item r"><span class="n">4.</span><span>Chikou Span poniżej ceny sprzed 26 świec</span></div>
+          <div class="dir-item r"><span class="n">SL.</span><span>Dolna krawędź chmury (Kumo)</span></div>
+        </div>
+      </div>
+      <div class="note" style="border-color:var(--teal)">☁️ <strong>Zasada 3 sygnałów:</strong> Im więcej warunków spełnionych (1-4) tym silniejszy sygnał. Samo przebicie chmury to słaby sygnał. Wszystkie 4 = bardzo mocne wejście.</div>
+    </div>
+    <div class="card" style="--c:#00d4d4">
+      <div class="card-label">Checklist sygnału</div>
+      <div class="dir-btns"><div class="db" id="p2bl" onclick="sd(2,'long')">▲ LONG</div><div class="db" id="p2bs" onclick="sd(2,'short')">▼ SHORT</div></div>
+      <div class="checklist" id="p2cl">
+        <div class="chk-row" onclick="tc(2,0)"><div class="chk-dot" id="p2d0"></div><span class="chk-label" id="p2l0">Cena powyżej chmury Kumo</span></div>
+        <div class="chk-row" onclick="tc(2,1)"><div class="chk-dot" id="p2d1"></div><span class="chk-label" id="p2l1">Tenkan-sen przecina Kijun-sen od dołu w górę</span></div>
+        <div class="chk-row" onclick="tc(2,2)"><div class="chk-dot" id="p2d2"></div><span class="chk-label" id="p2l2">Chmura przed ceną jest zielona (Span A > Span B)</span></div>
+        <div class="chk-row" onclick="tc(2,3)"><div class="chk-dot" id="p2d3"></div><span class="chk-label" id="p2l3">Chikou Span powyżej ceny sprzed 26 świec</span></div>
+      </div>
+      <div class="counter" id="p2ct"><div class="cdot" id="p2c0"></div><div class="cdot" id="p2c1"></div><div class="cdot" id="p2c2"></div><div class="cdot" id="p2c3"></div></div>
+      <div class="verdict" id="p2v"><div class="v-lbl">Sygnał</div><div class="v-txt" id="p2vt">— Wybierz kierunek —</div></div>
+      <button class="reset-btn" onclick="rs(2)">↺ Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PANEL 4: STOCHASTIC + PIVOT POINTS ===== -->
+<div class="panel" id="p3">
+  <div class="pgrid">
+    <div class="card full" style="--c:#ffc94d">
+      <div class="card-label">Opis strategii</div>
+      <div class="info-row">
+        <span class="info-icon">📖</span>
+        <span class="info-text"><strong>Stochastic + Pivot Points — Odbicia od kluczowych poziomów</strong><br>
+        Pivot Points to matematyczne poziomy S/R liczone z poprzedniej sesji (High+Low+Close/3). Stochastic mierzy gdzie cena jest w stosunku do ostatniego zakresu (0-100). Razem: czekasz aż cena dotrze do Pivota i Stochastic potwierdza wykupienie/wyprzedanie.</span>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">⏱</span>
+        <span class="info-text"><strong>Timeframe:</strong><br>
+          <span class="tf-badge tf-best">5MIN ✓✓✓</span>
+          <span class="tf-badge tf-best">15MIN ✓✓✓</span>
+          <span class="tf-badge tf-best">1H ✓✓✓</span>
+          <span class="tf-badge tf-ok">DAILY ✓</span>
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">🔧</span>
+        <span class="info-text"><strong>Poziomy Pivot:</strong> PP (główny) | R1, R2, R3 (opory) | S1, S2, S3 (wsparcia). Na 5 min używaj dziennych Pivot Points — bardzo skuteczne!</span>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">⚠️</span>
+        <span class="info-text"><strong>Stochastic ustawienia:</strong> (14,3,3) — standardowe. Sygnał gdy linia %K przecina %D w strefie wykupienia (&gt;80) lub wyprzedania (&lt;20).</span>
+      </div>
+      <div class="ind-chips">
+        <span class="chip" style="border-color:var(--yellow);color:var(--yellow)">Pivot Point</span>
+        <span class="chip" style="border-color:var(--blue);color:var(--blue)">Stochastic(14,3,3)</span>
+      </div>
+    </div>
+    <div class="card" style="--c:#ffc94d">
+      <div class="card-label">Kiedy wchodzić</div>
+      <div class="dir-cards">
+        <div class="dir-card long">
+          <div class="dir-title g">▲ LONG (odbicie od wsparcia)</div>
+          <div class="dir-item g"><span class="n">1.</span><span>Cena dotarła do poziomu S1, S2 lub PP</span></div>
+          <div class="dir-item g"><span class="n">2.</span><span>Stochastic poniżej 20 (wyprzedany)</span></div>
+          <div class="dir-item g"><span class="n">3.</span><span>Linia %K przecina %D od dołu w górę</span></div>
+          <div class="dir-item g"><span class="n">TP.</span><span>Następny poziom Pivot powyżej (S1→PP, PP→R1)</span></div>
+          <div class="dir-item g"><span class="n">SL.</span><span>Poniżej następnego poziomu S (S1→S2)</span></div>
+        </div>
+        <div class="dir-card short">
+          <div class="dir-title r">▼ SHORT (odrzut od oporu)</div>
+          <div class="dir-item r"><span class="n">1.</span><span>Cena dotarła do poziomu R1, R2 lub PP</span></div>
+          <div class="dir-item r"><span class="n">2.</span><span>Stochastic powyżej 80 (wykupiony)</span></div>
+          <div class="dir-item r"><span class="n">3.</span><span>Linia %K przecina %D od góry w dół</span></div>
+          <div class="dir-item r"><span class="n">TP.</span><span>Następny poziom Pivot poniżej (R1→PP, PP→S1)</span></div>
+          <div class="dir-item r"><span class="n">SL.</span><span>Powyżej następnego poziomu R (R1→R2)</span></div>
+        </div>
+      </div>
+      <div class="note" style="border-color:var(--yellow)">📐 <strong>Najsilniejsze poziomy:</strong> R2 i S2 to poziomy gdzie profesjonalni traderzy najczęściej składają zlecenia. Odbicie od S2 z Stochastic &lt;20 to jeden z najlepszych sygnałów w tej strategii.</div>
+    </div>
+    <div class="card" style="--c:#ffc94d">
+      <div class="card-label">Checklist sygnału</div>
+      <div class="dir-btns"><div class="db" id="p3bl" onclick="sd(3,'long')">▲ LONG</div><div class="db" id="p3bs" onclick="sd(3,'short')">▼ SHORT</div></div>
+      <div class="checklist" id="p3cl">
+        <div class="chk-row" onclick="tc(3,0)"><div class="chk-dot" id="p3d0"></div><span class="chk-label" id="p3l0">Cena dotarła do poziomu S1, S2 lub PP</span></div>
+        <div class="chk-row" onclick="tc(3,1)"><div class="chk-dot" id="p3d1"></div><span class="chk-label" id="p3l1">Stochastic poniżej 20 (wyprzedany)</span></div>
+        <div class="chk-row" onclick="tc(3,2)"><div class="chk-dot" id="p3d2"></div><span class="chk-label" id="p3l2">%K przecina %D od dołu w górę</span></div>
+      </div>
+      <div class="counter" id="p3ct"><div class="cdot" id="p3c0"></div><div class="cdot" id="p3c1"></div><div class="cdot" id="p3c2"></div></div>
+      <div class="verdict" id="p3v"><div class="v-lbl">Sygnał</div><div class="v-txt" id="p3vt">— Wybierz kierunek —</div></div>
+      <button class="reset-btn" onclick="rs(3)">↺ Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PANEL 5: VWAP + VOLUME ===== -->
+<div class="panel" id="p4">
+  <div class="pgrid">
+    <div class="card full" style="--c:#00e5a0">
+      <div class="card-label">Opis strategii</div>
+      <div class="info-row">
+        <span class="info-icon">📖</span>
+        <span class="info-text"><strong>VWAP + Volume — Strategia Instytucjonalna</strong><br>
+        VWAP (Volume Weighted Average Price) to średnia cena ważona wolumenem. Instytucje (banki, fundusze) używają VWAP jako benchmarku — kupują poniżej, sprzedają powyżej. Gdy detaliczny trader robi to samo co instytucje — ma wiatr w plecy.</span>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">⏱</span>
+        <span class="info-text"><strong>Timeframe:</strong><br>
+          <span class="tf-badge tf-best">5MIN ✓✓✓</span>
+          <span class="tf-badge tf-best">15MIN ✓✓✓</span>
+          <span class="tf-badge tf-ok">1H ✓✓</span>
+          <span class="tf-badge tf-bad">DAILY ✗</span>
+          <span class="tf-badge tf-bad">4H ✗</span>
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">🔧</span>
+        <span class="info-text"><strong>VWAP resetuje się każdego dnia o północy.</strong> Najsilniejszy sygnał jest rano (pierwsze 2h sesji) gdy VWAP jest najbliżej ceny rynkowej. Po południu VWAP jest mniej przydatny bo nagromadzony wolumen go "zakotwicza".</span>
+      </div>
+      <div class="info-row">
+        <span class="info-icon">💡</span>
+        <span class="info-text"><strong>Volume confirmation:</strong> Wejście jest ważne tylko jeśli wolumen przy świecy sygnałowej jest wyższy niż średni. Niski wolumen przy VWAP = pułapka.</span>
+      </div>
+      <div class="ind-chips">
+        <span class="chip" style="border-color:var(--green);color:var(--green)">VWAP</span>
+        <span class="chip" style="border-color:var(--blue);color:var(--blue)">Volume</span>
+        <span class="chip" style="border-color:var(--muted);color:var(--muted)">Volume MA(20)</span>
+      </div>
+    </div>
+    <div class="card" style="--c:#00e5a0">
+      <div class="card-label">Kiedy wchodzić</div>
+      <div class="dir-cards">
+        <div class="dir-card long">
+          <div class="dir-title g">▲ LONG (bounce off VWAP)</div>
+          <div class="dir-item g"><span class="n">1.</span><span>Cena cofnęła się do VWAP od góry</span></div>
+          <div class="dir-item g"><span class="n">2.</span><span>Świeca odbiła od VWAP — zamknięcie powyżej VWAP</span></div>
+          <div class="dir-item g"><span class="n">3.</span><span>Volume przy świecy odbicia wyższy niż Volume MA(20)</span></div>
+          <div class="dir-item g"><span class="n">4.</span><span>Ogólny trend dzienny wzrostowy (cena powyżej VWAP przez większość dnia)</span></div>
+          <div class="dir-item g"><span class="n">SL.</span><span>Poniżej VWAP o 0.5–1× ATR</span></div>
+        </div>
+        <div class="dir-card short">
+          <div class="dir-title r">▼ SHORT (rejection at VWAP)</div>
+          <div class="dir-item r"><span class="n">1.</span><span>Cena odbiła w górę do VWAP od dołu</span></div>
+          <div class="dir-item r"><span class="n">2.</span><span>Świeca odrzucona od VWAP — zamknięcie poniżej VWAP</span></div>
+          <div class="dir-item r"><span class="n">3.</span><span>Volume przy świecy odrzucenia wyższy niż Volume MA(20)</span></div>
+          <div class="dir-item r"><span class="n">4.</span><span>Ogólny trend dzienny spadkowy (cena poniżej VWAP przez większość dnia)</span></div>
+          <div class="dir-item r"><span class="n">SL.</span><span>Powyżej VWAP o 0.5–1× ATR</span></div>
+        </div>
+      </div>
+      <div class="note" style="border-color:var(--green)">🏦 <strong>Dlaczego to działa:</strong> Algorytmy dużych instytucji automatycznie kupują gdy cena jest poniżej VWAP i sprzedają gdy powyżej. Kiedy do tego poziomu dochodzi dużo algorytmów jednocześnie — masz naturalny magnes dla ceny. Grasz razem z największymi graczami rynku.</div>
+    </div>
+    <div class="card" style="--c:#00e5a0">
+      <div class="card-label">Checklist sygnału</div>
+      <div class="dir-btns"><div class="db" id="p4bl" onclick="sd(4,'long')">▲ LONG</div><div class="db" id="p4bs" onclick="sd(4,'short')">▼ SHORT</div></div>
+      <div class="checklist" id="p4cl">
+        <div class="chk-row" onclick="tc(4,0)"><div class="chk-dot" id="p4d0"></div><span class="chk-label" id="p4l0">Cena cofnęła się do VWAP</span></div>
+        <div class="chk-row" onclick="tc(4,1)"><div class="chk-dot" id="p4d1"></div><span class="chk-label" id="p4l1">Świeca odbiła — zamknięcie powyżej VWAP</span></div>
+        <div class="chk-row" onclick="tc(4,2)"><div class="chk-dot" id="p4d2"></div><span class="chk-label" id="p4l2">Volume wyższy niż Volume MA(20)</span></div>
+        <div class="chk-row" onclick="tc(4,3)"><div class="chk-dot" id="p4d3"></div><span class="chk-label" id="p4l3">Trend dzienny wzrostowy (cena nad VWAP)</span></div>
+      </div>
+      <div class="counter" id="p4ct"><div class="cdot" id="p4c0"></div><div class="cdot" id="p4c1"></div><div class="cdot" id="p4c2"></div><div class="cdot" id="p4c3"></div></div>
+      <div class="verdict" id="p4v"><div class="v-lbl">Sygnał</div><div class="v-txt" id="p4vt">— Wybierz kierunek —</div></div>
+      <button class="reset-btn" onclick="rs(4)">↺ Reset</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const tabColors = ['#b06aff','#ff8c42','#00d4d4','#ffc94d','#00e5a0'];
+  const numChecks = [3,3,4,3,4];
+
+  const longLabels = [
+    ['Cena dotknęła dolnej bandy BB','RSI poniżej 30 (wyprzedany)','Świeca zamknęła się z powrotem wewnątrz pasm'],
+    ['Supertrend zmienił kolor na zielony','MACD histogram powyżej zera (dodatni)','Cena powyżej linii Supertrend'],
+    ['Cena powyżej chmury Kumo','Tenkan-sen przecina Kijun-sen od dołu w górę','Chmura przed ceną jest zielona (Span A > Span B)','Chikou Span powyżej ceny sprzed 26 świec'],
+    ['Cena dotarła do poziomu S1, S2 lub PP','Stochastic poniżej 20 (wyprzedany)','%K przecina %D od dołu w górę'],
+    ['Cena cofnęła się do VWAP','Świeca odbiła — zamknięcie powyżej VWAP','Volume wyższy niż Volume MA(20)','Trend dzienny wzrostowy (cena nad VWAP)'],
+  ];
+
+  const shortLabels = [
+    ['Cena dotknęła górnej bandy BB','RSI powyżej 70 (wykupiony)','Świeca zamknęła się z powrotem wewnątrz pasm'],
+    ['Supertrend zmienił kolor na czerwony','MACD histogram poniżej zera (ujemny)','Cena poniżej linii Supertrend'],
+    ['Cena poniżej chmury Kumo','Tenkan-sen przecina Kijun-sen od góry w dół','Chmura przed ceną jest czerwona (Span B > Span A)','Chikou Span poniżej ceny sprzed 26 świec'],
+    ['Cena dotarła do poziomu R1, R2 lub PP','Stochastic powyżej 80 (wykupiony)','%K przecina %D od góry w dół'],
+    ['Cena odbiła w górę do VWAP','Świeca odrzucona — zamknięcie poniżej VWAP','Volume wyższy niż Volume MA(20)','Trend dzienny spadkowy (cena pod VWAP)'],
+  ];
+
+  let state = Array.from({length:5}, (_,i) => ({ dir:null, checks:Array(numChecks[i]).fill(false) }));
+
+  function switchTab(n) {
+    document.querySelectorAll('.tab').forEach((t,i) => {
+      if(i===n) { t.className='tab active'; t.style.background=tabColors[n]; t.style.color='#0a0c0f'; }
+      else { t.className='tab'; t.style.background=''; t.style.color=''; }
+    });
+    document.querySelectorAll('.panel').forEach((p,i) => p.className='panel'+(i===n?' active':''));
+  }
+
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    if(i===0) { t.style.background=tabColors[0]; t.style.color='#0a0c0f'; }
+  });
+
+  function sd(p, dir) {
+    state[p].dir=dir; state[p].checks.fill(false);
+    document.getElementById('p'+p+'bl').className='db'+(dir==='long'?' al':'');
+    document.getElementById('p'+p+'bs').className='db'+(dir==='short'?' as':'');
+    const labels = dir==='long' ? longLabels[p] : shortLabels[p];
+    for(let i=0;i<numChecks[p];i++) {
+      document.getElementById('p'+p+'l'+i).textContent=labels[i];
+      document.getElementById('p'+p+'d'+i).style.background='';
+      document.getElementById('p'+p+'d'+i).style.boxShadow='';
+      document.querySelectorAll('#p'+p+'cl .chk-row')[i].className='chk-row';
+    }
+    render(p);
+  }
+
+  function tc(p,i) {
+    if(!state[p].dir) return;
+    state[p].checks[i]=!state[p].checks[i];
+    const on=state[p].checks[i], isS=state[p].dir==='short';
+    const dot=document.getElementById('p'+p+'d'+i);
+    const row=document.querySelectorAll('#p'+p+'cl .chk-row')[i];
+    if(on) {
+      dot.style.background=isS?'var(--red)':'var(--green)';
+      dot.style.boxShadow=isS?'0 0 8px rgba(255,68,102,0.5)':'0 0 8px rgba(0,229,160,0.5)';
+      row.className='chk-row '+(isS?'on-s':'on');
+    } else {
+      dot.style.background=''; dot.style.boxShadow=''; row.className='chk-row';
+    }
+    render(p);
+  }
+
+  function render(p) {
+    const {dir,checks}=state[p], n=numChecks[p];
+    const count=checks.filter(Boolean).length, all=count===n, isS=dir==='short';
+    for(let i=0;i<n;i++) {
+      const cd=document.getElementById('p'+p+'c'+i);
+      cd.className='cdot'+(checks[i]?(isS?' fs':' fl'):'');
+    }
+    const v=document.getElementById('p'+p+'v'), vt=document.getElementById('p'+p+'vt');
+    if(!dir) { v.className='verdict'; vt.textContent='— Wybierz kierunek —'; }
+    else if(all) { v.className='verdict '+(isS?'vs':'vl'); vt.textContent=isS?'▼ WEJDŹ SHORT':'▲ WEJDŹ LONG'; }
+    else if(count>0) { v.className='verdict vw'; vt.textContent='CZEKAJ — '+count+'/'+n; }
+    else { v.className='verdict'; vt.textContent='— Zaznacz potwierdzenia —'; }
+  }
+
+  function rs(p) {
+    state[p]={dir:null,checks:Array(numChecks[p]).fill(false)};
+    document.getElementById('p'+p+'bl').className='db';
+    document.getElementById('p'+p+'bs').className='db';
+    for(let i=0;i<numChecks[p];i++) {
+      document.getElementById('p'+p+'d'+i).style.background='';
+      document.getElementById('p'+p+'d'+i).style.boxShadow='';
+      document.querySelectorAll('#p'+p+'cl .chk-row')[i].className='chk-row';
+      document.getElementById('p'+p+'l'+i).textContent=longLabels[p][i];
+    }
+    render(p);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triple Confirmation</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #111318;
+    --bg3: #181c23;
+    --border: #1e2530;
+    --accent: #00e5a0;
+    --red: #ff4466;
+    --yellow: #ffc94d;
+    --text: #e8eaf0;
+    --muted: #5a6070;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background-image:
+      radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,229,160,0.05) 0%, transparent 60%);
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 420px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .tag {
+    font-size: 9px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+  }
+
+  /* Direction */
+  .dir-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .dir-btn {
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    letter-spacing: 0.1em;
+  }
+
+  .dir-btn:hover { border-color: var(--muted); color: var(--text); }
+  .dir-btn.active-long { border-color: var(--accent); background: rgba(0,229,160,0.08); color: var(--accent); }
+  .dir-btn.active-short { border-color: var(--red); background: rgba(255,68,102,0.08); color: var(--red); }
+
+  /* Signals */
+  .signals {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .sig-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--bg2);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .sig-row:hover { border-color: var(--muted); }
+  .sig-row.on { border-color: rgba(0,229,160,0.3); background: rgba(0,229,160,0.04); }
+  .sig-row.on-short { border-color: rgba(255,68,102,0.3); background: rgba(255,68,102,0.04); }
+
+  .sig-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: all 0.25s;
+  }
+
+  .sig-row.on .sig-dot { background: var(--accent); box-shadow: 0 0 10px rgba(0,229,160,0.5); }
+  .sig-row.on-short .sig-dot { background: var(--red); box-shadow: 0 0 10px rgba(255,68,102,0.5); }
+
+  .sig-content { flex: 1; }
+
+  .sig-title {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    line-height: 1.5;
+    transition: color 0.2s;
+  }
+
+  .sig-row.on .sig-title,
+  .sig-row.on-short .sig-title { color: var(--text); }
+
+  .sig-range {
+    font-size: 10px;
+    margin-top: 2px;
+    color: var(--border);
+    transition: color 0.2s;
+  }
+
+  .sig-row.on .sig-range { color: var(--accent); }
+  .sig-row.on-short .sig-range { color: var(--red); }
+
+  /* Counter */
+  .counter {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .counter-dot {
+    width: 28px; height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    transition: all 0.3s;
+  }
+
+  .counter-dot.filled-long { background: var(--accent); box-shadow: 0 0 8px rgba(0,229,160,0.4); }
+  .counter-dot.filled-short { background: var(--red); box-shadow: 0 0 8px rgba(255,68,102,0.4); }
+
+  /* Verdict */
+  .verdict {
+    padding: 20px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    text-align: center;
+    transition: all 0.3s;
+  }
+
+  .verdict.wait { border-color: rgba(255,201,77,0.3); background: rgba(255,201,77,0.04); }
+  .verdict.go-long { border-color: rgba(0,229,160,0.4); background: rgba(0,229,160,0.06); }
+  .verdict.go-short { border-color: rgba(255,68,102,0.4); background: rgba(255,68,102,0.06); }
+
+  .v-label {
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .v-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--muted);
+    transition: color 0.3s;
+    letter-spacing: 0.02em;
+  }
+
+  .verdict.wait .v-text { color: var(--yellow); }
+  .verdict.go-long .v-text { color: var(--accent); }
+  .verdict.go-short .v-text { color: var(--red); }
+
+  /* Reset */
+  .reset-btn {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .reset-btn:hover { border-color: var(--muted); color: var(--text); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <span class="tag">Triple Confirmation Strategy</span>
+    <h1>Checklist<br>Sygnału</h1>
+  </div>
+
+  <div class="dir-group">
+    <div class="dir-btn" id="btnLong" onclick="setDir('long')">▲ LONG</div>
+    <div class="dir-btn" id="btnShort" onclick="setDir('short')">▼ SHORT</div>
+  </div>
+
+  <div class="signals">
+    <div class="sig-row" id="row0" onclick="toggle(0)">
+      <div class="sig-dot" id="dot0"></div>
+      <div class="sig-content">
+        <div class="sig-title" id="title0">Cena powyżej MA(50)</div>
+        <div class="sig-range" id="range0">trend wzrostowy</div>
+      </div>
+    </div>
+    <div class="sig-row" id="row1" onclick="toggle(1)">
+      <div class="sig-dot" id="dot1"></div>
+      <div class="sig-content">
+        <div class="sig-title" id="title1">RSI powyżej 50, między 45–65</div>
+        <div class="sig-range" id="range1">nie wykupiony, jest przestrzeń do ruchu</div>
+      </div>
+    </div>
+    <div class="sig-row" id="row2" onclick="toggle(2)">
+      <div class="sig-dot" id="dot2"></div>
+      <div class="sig-content">
+        <div class="sig-title" id="title2">MACD krzyżuje w górę</div>
+        <div class="sig-range" id="range2">linia MACD przecina sygnał od dołu</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="counter">
+    <div class="counter-dot" id="cd0"></div>
+    <div class="counter-dot" id="cd1"></div>
+    <div class="counter-dot" id="cd2"></div>
+  </div>
+
+  <div class="verdict" id="verdict">
+    <div class="v-label">Sygnał</div>
+    <div class="v-text" id="verdictText">— Wybierz kierunek —</div>
+  </div>
+
+  <button class="reset-btn" onclick="reset()">↺ Reset</button>
+
+</div>
+
+<script>
+  let dir = null;
+  const state = [false, false, false];
+
+  const longLabels = [
+    ['Cena powyżej MA(50)', 'trend wzrostowy'],
+    ['RSI powyżej 50, między 45–65', 'nie wykupiony, jest przestrzeń do ruchu'],
+    ['MACD krzyżuje w górę', 'linia MACD przecina sygnał od dołu'],
+  ];
+
+  const shortLabels = [
+    ['Cena poniżej MA(50)', 'trend spadkowy'],
+    ['RSI poniżej 50, między 35–55', 'nie wyprzedany, jest przestrzeń do ruchu'],
+    ['MACD krzyżuje w dół', 'linia MACD przecina sygnał od góry'],
+  ];
+
+  function setDir(d) {
+    dir = d;
+    document.getElementById('btnLong').className = 'dir-btn' + (d === 'long' ? ' active-long' : '');
+    document.getElementById('btnShort').className = 'dir-btn' + (d === 'short' ? ' active-short' : '');
+    const labels = d === 'long' ? longLabels : shortLabels;
+    [0,1,2].forEach(i => {
+      document.getElementById('title'+i).textContent = labels[i][0];
+      document.getElementById('range'+i).textContent = labels[i][1];
+      state[i] = false;
+      updateRow(i);
+    });
+    render();
+  }
+
+  function toggle(i) {
+    if (!dir) return;
+    state[i] = !state[i];
+    updateRow(i);
+    render();
+  }
+
+  function updateRow(i) {
+    const row = document.getElementById('row'+i);
+    if (state[i]) {
+      row.className = 'sig-row ' + (dir === 'long' ? 'on' : 'on-short');
+    } else {
+      row.className = 'sig-row';
+    }
+  }
+
+  function render() {
+    const count = state.filter(Boolean).length;
+    const all = count === 3;
+
+    // Counter dots
+    [0,1,2].forEach(i => {
+      const cd = document.getElementById('cd'+i);
+      if (state[i]) {
+        cd.className = 'counter-dot ' + (dir === 'long' ? 'filled-long' : 'filled-short');
+      } else {
+        cd.className = 'counter-dot';
+      }
+    });
+
+    // Verdict
+    const v = document.getElementById('verdict');
+    const vt = document.getElementById('verdictText');
+
+    if (!dir) {
+      v.className = 'verdict';
+      vt.textContent = '— Wybierz kierunek —';
+    } else if (all) {
+      v.className = 'verdict ' + (dir === 'long' ? 'go-long' : 'go-short');
+      vt.textContent = dir === 'long' ? '▲ WEJDŹ LONG' : '▼ WEJDŹ SHORT';
+    } else if (count > 0) {
+      v.className = 'verdict wait';
+      vt.textContent = 'CZEKAJ — ' + count + '/3';
+    } else {
+      v.className = 'verdict';
+      vt.textContent = '— Zaznacz potwierdzenia —';
+    }
+  }
+
+  function reset() {
+    dir = null;
+    [0,1,2].forEach(i => { state[i] = false; updateRow(i); });
+    document.getElementById('btnLong').className = 'dir-btn';
+    document.getElementById('btnShort').className = 'dir-btn';
+    const labels = longLabels;
+    [0,1,2].forEach(i => {
+      document.getElementById('title'+i).textContent = labels[i][0];
+      document.getElementById('range'+i).textContent = labels[i][1];
+    });
+    render();
+  }
+</script>
+</body>
+</html>

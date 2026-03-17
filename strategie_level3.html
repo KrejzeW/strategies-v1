@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strategie Level 3</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0c0f; --bg2:#111318; --bg3:#181c23; --border:#1e2530;
+    --green:#00e5a0; --blue:#0099ff; --red:#ff4466; --yellow:#ffc94d;
+    --purple:#b06aff; --orange:#ff8c42; --teal:#00d4d4; --pink:#ff6eb4;
+    --text:#e8eaf0; --muted:#5a6070;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:var(--bg); color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    min-height:100vh; padding:32px 16px 48px;
+    background-image:radial-gradient(ellipse 80% 40% at 50% -10%, rgba(255,110,180,0.05) 0%, transparent 60%);
+  }
+
+  .header { text-align:center; margin-bottom:36px; animation:fadeDown 0.5s ease both; }
+  .tag { font-size:9px; letter-spacing:0.35em; text-transform:uppercase; color:var(--pink); display:block; margin-bottom:10px; }
+  .header h1 {
+    font-family:'Syne',sans-serif; font-size:clamp(24px,5vw,42px);
+    font-weight:800; letter-spacing:-0.02em;
+    background:linear-gradient(135deg,#fff 0%,var(--pink) 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .header p { color:var(--muted); font-size:11px; margin-top:8px; letter-spacing:0.1em; }
+
+  /* ADX EXPLAINER */
+  .adx-box {
+    max-width:900px; margin:0 auto 28px;
+    background:var(--bg2); border:1px solid var(--border);
+    border-radius:16px; overflow:hidden;
+    animation:fadeUp 0.4s ease both;
+  }
+  .adx-header {
+    padding:16px 24px; cursor:pointer;
+    display:flex; align-items:center; justify-content:space-between;
+    border-bottom:1px solid transparent; transition:border-color 0.2s;
+    user-select:none;
+  }
+  .adx-header:hover { border-bottom-color:var(--border); }
+  .adx-header-left { display:flex; align-items:center; gap:12px; }
+  .adx-badge {
+    padding:4px 12px; border-radius:20px; font-size:9px; font-weight:700;
+    letter-spacing:0.2em; background:rgba(255,110,180,0.12);
+    border:1px solid var(--pink); color:var(--pink);
+  }
+  .adx-title { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; color:var(--text); }
+  .adx-sub { font-size:10px; color:var(--muted); margin-top:2px; }
+  .adx-arrow { color:var(--muted); font-size:12px; transition:transform 0.3s; }
+  .adx-arrow.open { transform:rotate(180deg); }
+  .adx-body { padding:0 24px; max-height:0; overflow:hidden; transition:max-height 0.4s ease, padding 0.3s; }
+  .adx-body.open { max-height:1000px; padding:20px 24px; }
+
+  .adx-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; }
+  @media(max-width:600px) { .adx-grid { grid-template-columns:1fr; } }
+
+  .adx-card {
+    padding:14px 16px; background:var(--bg3); border-radius:10px;
+    border-left:3px solid var(--border);
+  }
+  .adx-card.pink { border-left-color:var(--pink); }
+  .adx-card.yellow { border-left-color:var(--yellow); }
+  .adx-card-title { font-size:9px; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:10px; font-weight:700; }
+  .adx-card-title.pink { color:var(--pink); }
+  .adx-card-title.yellow { color:var(--yellow); }
+
+  .adx-scale { display:flex; flex-direction:column; gap:6px; }
+  .adx-level {
+    display:flex; align-items:center; gap:10px;
+    padding:7px 10px; border-radius:8px; background:var(--bg);
+  }
+  .adx-val { font-size:10px; font-weight:700; min-width:48px; }
+  .adx-bar { flex:1; height:6px; border-radius:3px; background:var(--border); overflow:hidden; }
+  .adx-fill { height:100%; border-radius:3px; }
+  .adx-desc { font-size:10px; color:var(--muted); min-width:130px; }
+
+  .adx-lines { display:flex; flex-direction:column; gap:8px; }
+  .adx-line-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
+  .adx-line-row:last-child { border-bottom:none; }
+  .adx-dot { width:12px; height:3px; border-radius:2px; flex-shrink:0; }
+  .adx-line-name { font-size:11px; color:var(--text); min-width:80px; }
+  .adx-line-desc { font-size:10px; color:var(--muted); line-height:1.5; }
+
+  .adx-rule {
+    padding:12px 14px; background:var(--bg3); border-radius:10px;
+    border-left:3px solid var(--pink); font-size:11px; color:var(--muted);
+    line-height:1.6;
+  }
+  .adx-rule strong { color:var(--text); }
+
+  /* TABS */
+  .tabs {
+    display:flex; gap:6px; margin-bottom:24px;
+    max-width:900px; margin-left:auto; margin-right:auto;
+    overflow-x:auto; padding-bottom:4px; scrollbar-width:none;
+  }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab {
+    flex-shrink:0; padding:8px 14px; border-radius:10px;
+    border:1px solid var(--border); background:var(--bg2);
+    color:var(--muted); font-family:'JetBrains Mono',monospace;
+    font-size:10px; letter-spacing:0.1em; cursor:pointer;
+    transition:all 0.2s; white-space:nowrap;
+  }
+  .tab:hover { color:var(--text); border-color:var(--muted); }
+  .tab.active { color:#0a0c0f; font-weight:600; border-color:transparent; }
+
+  .panel { display:none; max-width:900px; margin:0 auto; animation:fadeUp 0.35s ease both; }
+  .panel.active { display:block; }
+
+  .pgrid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media(max-width:640px) { .pgrid { grid-template-columns:1fr; } }
+  .full { grid-column:1/-1; }
+
+  .card {
+    background:var(--bg2); border:1px solid var(--border);
+    border-radius:14px; padding:20px; position:relative; overflow:hidden;
+  }
+  .card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg,transparent,var(--c,var(--pink)),transparent);
+    opacity:0.5;
+  }
+  .card-label {
+    font-size:9px; letter-spacing:0.25em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:14px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .card-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  .info-row {
+    display:flex; align-items:flex-start; gap:10px;
+    padding:8px 0; border-bottom:1px solid var(--border); font-size:11px;
+  }
+  .info-row:last-child { border-bottom:none; }
+  .info-icon { font-size:14px; flex-shrink:0; width:20px; text-align:center; margin-top:1px; }
+  .info-text { color:var(--muted); line-height:1.6; flex:1; }
+  .info-text strong { color:var(--text); }
+
+  .tf-badge {
+    display:inline-block; padding:3px 8px; border-radius:6px;
+    font-size:9px; letter-spacing:0.15em; font-weight:600;
+    border:1px solid; margin-right:4px; margin-bottom:4px;
+  }
+  .tf-best { border-color:var(--green); color:var(--green); background:rgba(0,229,160,0.08); }
+  .tf-ok   { border-color:var(--yellow); color:var(--yellow); background:rgba(255,201,77,0.08); }
+  .tf-bad  { border-color:var(--red); color:var(--red); background:rgba(255,68,102,0.08); }
+
+  .ind-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .chip {
+    padding:4px 10px; border-radius:20px; font-size:9px;
+    letter-spacing:0.1em; font-weight:600; border:1px solid;
+  }
+
+  .dir-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .dir-card { padding:14px; border-radius:12px; border:1px solid var(--border); background:var(--bg3); }
+  .dir-card.long { border-left:3px solid var(--green); }
+  .dir-card.short { border-left:3px solid var(--red); }
+  .dir-title { font-size:10px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:10px; }
+  .dir-title.g { color:var(--green); }
+  .dir-title.r { color:var(--red); }
+  .dir-item { font-size:10px; color:var(--muted); line-height:1.6; display:flex; gap:6px; margin-bottom:4px; }
+  .dir-item .n { flex-shrink:0; }
+  .dir-item.g .n { color:var(--green); }
+  .dir-item.r .n { color:var(--red); }
+
+  .note {
+    padding:12px 14px; background:var(--bg3); border-radius:10px;
+    border-left:3px solid; font-size:10px; color:var(--muted);
+    line-height:1.6; margin-top:10px;
+  }
+  .note strong { color:var(--text); }
+
+  .checklist { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .chk-row {
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px; background:var(--bg3); border-radius:10px;
+    border:1px solid var(--border); cursor:pointer;
+    transition:all 0.2s; user-select:none;
+  }
+  .chk-row:hover { border-color:var(--muted); }
+  .chk-dot { width:11px; height:11px; border-radius:50%; background:var(--border); flex-shrink:0; transition:all 0.25s; }
+  .chk-row.on  { border-color:rgba(0,229,160,0.3); background:rgba(0,229,160,0.04); }
+  .chk-row.on  .chk-dot { background:var(--green); box-shadow:0 0 8px rgba(0,229,160,0.5); }
+  .chk-row.on  .chk-label { color:var(--text); }
+  .chk-row.on-s { border-color:rgba(255,68,102,0.3); background:rgba(255,68,102,0.04); }
+  .chk-row.on-s .chk-dot { background:var(--red); box-shadow:0 0 8px rgba(255,68,102,0.5); }
+  .chk-row.on-s .chk-label { color:var(--text); }
+  .chk-label { font-size:11px; color:var(--muted); line-height:1.4; }
+
+  .dir-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+  .db {
+    padding:12px; border-radius:10px; border:1px solid var(--border);
+    background:var(--bg3); color:var(--muted); font-family:'JetBrains Mono',monospace;
+    font-size:12px; cursor:pointer; text-align:center; transition:all 0.2s; letter-spacing:0.1em;
+  }
+  .db:hover { border-color:var(--muted); color:var(--text); }
+  .db.al { border-color:var(--green); background:rgba(0,229,160,0.08); color:var(--green); }
+  .db.as { border-color:var(--red); background:rgba(255,68,102,0.08); color:var(--red); }
+
+  .counter { display:flex; gap:6px; justify-content:center; margin-bottom:12px; }
+  .cdot { height:5px; border-radius:3px; background:var(--border); transition:all 0.3s; width:20px; }
+  .cdot.fl { background:var(--green); box-shadow:0 0 6px rgba(0,229,160,0.4); }
+  .cdot.fs { background:var(--red); box-shadow:0 0 6px rgba(255,68,102,0.4); }
+
+  .verdict {
+    padding:16px; border-radius:12px; border:1px solid var(--border);
+    background:var(--bg3); text-align:center; transition:all 0.3s;
+  }
+  .verdict.vl { border-color:rgba(0,229,160,0.35); background:rgba(0,229,160,0.05); }
+  .verdict.vs { border-color:rgba(255,68,102,0.35); background:rgba(255,68,102,0.05); }
+  .verdict.vw { border-color:rgba(255,201,77,0.3); background:rgba(255,201,77,0.04); }
+  .v-lbl { font-size:9px; letter-spacing:0.3em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .v-txt { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; color:var(--muted); transition:color 0.3s; }
+  .verdict.vl .v-txt { color:var(--green); }
+  .verdict.vs .v-txt { color:var(--red); }
+  .verdict.vw .v-txt { color:var(--yellow); }
+
+  .reset-btn {
+    display:block; width:100%; margin-top:10px; padding:9px;
+    background:none; border:1px solid var(--border); border-radius:9px;
+    color:var(--muted); font-family:'JetBrains Mono',monospace;
+    font-size:9px; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; transition:all 0.2s;
+  }
+  .reset-btn:hover { border-color:var(--muted); color:var(--text); }
+
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeUp   { from{opacity:0;transform:translateY(14px)}  to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="tag">Advanced Strategies — Level 3</span>
+  <h1>5 Strategii<br>Eksperckich</h1>
+  <p>ADX · Parabolic SAR · Donchian · MFI · OBV · Keltner · CCI</p>
+</div>
+
+<!-- ADX EXPLAINER -->
+<div class="adx-box">
+  <div class="adx-header" onclick="toggleADX()">
+    <div class="adx-header-left">
+      <span class="adx-badge">BAZA WIEDZY</span>
+      <div>
+        <div class="adx-title">Co to jest ADX?</div>
+        <div class="adx-sub">Kliknij aby rozwinąć — przeczytaj zanim użyjesz strategii ①</div>
+      </div>
+    </div>
+    <span class="adx-arrow" id="adxArrow">▼</span>
+  </div>
+  <div class="adx-body" id="adxBody">
+    <div class="adx-grid">
+      <div class="adx-card pink">
+        <div class="adx-card-title pink">Skala ADX — siła trendu</div>
+        <div class="adx-scale">
+          <div class="adx-level">
+            <span class="adx-val" style="color:var(--red)">0–20</span>
+            <div class="adx-bar"><div class="adx-fill" style="width:20%;background:var(--red)"></div></div>
+            <span class="adx-desc" style="color:var(--red)">Brak trendu — ranging</span>
+          </div>
+          <div class="adx-level">
+            <span class="adx-val" style="color:var(--yellow)">20–40</span>
+            <div class="adx-bar"><div class="adx-fill" style="width:40%;background:var(--yellow)"></div></div>
+            <span class="adx-desc" style="color:var(--yellow)">Trend się zaczyna ✓</span>
+          </div>
+          <div class="adx-level">
+            <span class="adx-val" style="color:var(--green)">40–60</span>
+            <div class="adx-bar"><div class="adx-fill" style="width:60%;background:var(--green)"></div></div>
+            <span class="adx-desc" style="color:var(--green)">Silny trend — trzymaj</span>
+          </div>
+          <div class="adx-level">
+            <span class="adx-val" style="color:var(--pink)">60+</span>
+            <div class="adx-bar"><div class="adx-fill" style="width:85%;background:var(--pink)"></div></div>
+            <span class="adx-desc" style="color:var(--pink)">Bardzo silny — rzadki</span>
+          </div>
+        </div>
+      </div>
+      <div class="adx-card yellow">
+        <div class="adx-card-title yellow">3 linie ADX na wykresie</div>
+        <div class="adx-lines">
+          <div class="adx-line-row">
+            <div class="adx-dot" style="background:var(--yellow)"></div>
+            <span class="adx-line-name">ADX</span>
+            <span class="adx-line-desc">Siła trendu (0–100). Nie mówi kierunku — tylko jak silny jest ruch.</span>
+          </div>
+          <div class="adx-line-row">
+            <div class="adx-dot" style="background:var(--green)"></div>
+            <span class="adx-line-name">+DI</span>
+            <span class="adx-line-desc">Siła ruchu wzrostowego. Gdy +DI > -DI = bulls dominują.</span>
+          </div>
+          <div class="adx-line-row">
+            <div class="adx-dot" style="background:var(--red)"></div>
+            <span class="adx-line-name">-DI</span>
+            <span class="adx-line-desc">Siła ruchu spadkowego. Gdy -DI > +DI = bears dominują.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="adx-rule">
+      ⚡ <strong>Złota zasada ADX:</strong> ADX mówi CI czy trend istnieje, +DI/-DI mówią CI w jakim kierunku. Zawsze używaj ADX jako filtru — jeśli ADX &lt; 20, nie wchodź w żadną strategię trendową. Czekaj. Strategie trendowe przy ranging rynku = strata pieniędzy na spreadzie.<br><br>
+      🎯 <strong>Sygnał wejścia:</strong> +DI przecina -DI od dołu w górę <strong>i</strong> ADX &gt; 20 = LONG. -DI przecina +DI od dołu w górę <strong>i</strong> ADX &gt; 20 = SHORT. Im wyżej ADX w momencie krzyżowania — tym silniejszy sygnał.
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs" id="tabs">
+  <div class="tab active" onclick="switchTab(0)">① ADX + Parabolic SAR</div>
+  <div class="tab" onclick="switchTab(1)">② Keltner + Momentum</div>
+  <div class="tab" onclick="switchTab(2)">③ MFI + OBV</div>
+  <div class="tab" onclick="switchTab(3)">④ Donchian + Williams %R</div>
+  <div class="tab" onclick="switchTab(4)">⑤ CCI + Rate of Change</div>
+</div>
+
+<!-- ===== PANEL 1: ADX + PARABOLIC SAR ===== -->
+<div class="panel active" id="p0">
+  <div class="pgrid">
+    <div class="card full" style="--c:#ff6eb4">
+      <div class="card-label">Opis strategii</div>
+      <div class="info-row"><span class="info-icon">📖</span><span class="info-text"><strong>ADX + Parabolic SAR — Profesjonalny Trend Filter</strong><br>Parabolic SAR rysuje kropki nad lub pod ceną — gdy cena przebije kropkę, zmienia się kierunek. Sam SAR daje wiele fałszywych sygnałów przy ranging rynku. ADX jako filtr rozwiązuje ten problem — wchodź tylko gdy ADX &gt; 25. Używana przez profesjonalnych traderów instytucjonalnych.</span></div>
+      <div class="info-row"><span class="info-icon">⏱</span><span class="info-text"><strong>Timeframe:</strong><br>
+        <span class="tf-badge tf-best">1H ✓✓✓</span>
+        <span class="tf-badge tf-best">4H ✓✓✓</span>
+        <span class="tf-badge tf-best">DAILY ✓✓✓</span>
+        <span class="tf-badge tf-ok">15MIN ✓✓</span>
+        <span class="tf-badge tf-bad">5MIN ✗</span>
+      </span></div>
+      <div class="info-row"><span class="info-icon">🔧</span><span class="info-text"><strong>Ustawienia:</strong> ADX(14) — standardowe. Parabolic SAR(0.02, 0.2) — standardowe. Trailing Stop = aktualny SAR przesuwa się automatycznie za ceną.</span></div>
+      <div class="info-row"><span class="info-icon">💡</span><span class="info-text"><strong>Klucz:</strong> SAR daje Ci automatyczny Trailing Stop — nie musisz go ręcznie przesuwać. Każda nowa świeca przesuwa kropkę bliżej ceny. Gdy cena "dotknie" kropki — wychodzisz.</span></div>
+      <div class="ind-chips">
+        <span class="chip" style="border-color:var(--pink);color:var(--pink)">ADX(14)</span>
+        <span class="chip" style="border-color:var(--yellow);color:var(--yellow)">+DI / -DI</span>
+        <span class="chip" style="border-color:var(--orange);color:var(--orange)">Parabolic SAR(0.02,0.2)</span>
+      </div>
+    </div>
+    <div class="card" style="--c:#ff6eb4">
+      <div class="card-label">Kiedy wchodzić</div>
+      <div class="dir-cards">
+        <div class="dir-card long">
+          <div class="dir-title g">▲ LONG</div>
+          <div class="dir-item g"><span class="n">1.</span><span>ADX powyżej 25 — trend istnieje</span></div>
+          <div class="dir-item g"><span class="n">2.</span><span>+DI przecina -DI od dołu w górę</span></div>
+          <div class="dir-item g"><span class="n">3.</span><span>SAR kropki pojawiają się PONIŻEJ ceny</span></div>
+          <div class="dir-item g"><span class="n">4.</span><span>Cena powyżej SAR przez minimum 2 świece</span></div>
+          <div class="dir-item g"><span class="n">SL.</span><span>Aktualny poziom SAR (trailing — przesuwa się)</span></div>
+          <div class="dir-item g"><span class="n">TP.</span><span>Wyjdź gdy SAR przeskakuje nad cenę</span></div>
+        </div>
+        <div class="dir-card short">
+          <div class="dir-title r">▼ SHORT</div>
+          <div class="dir-item r"><span class="n">1.</span><span>ADX powyżej 25 — trend istnieje</span></div>
+          <div class="dir-item r"><span class="n">2.</span><span>-DI przecina +DI od dołu w górę</span></div>
+          <div class="dir-item r"><span class="n">3.</span><span>SAR kropki pojawiają się POWYŻEJ ceny</span></div>
+          <div class="dir-item r"><span class="n">4.</span><span>Cena poniżej SAR przez minimum 2 świece</span></div>
+          <div class="dir-item r"><span class="n">SL.</span><span>Aktualny poziom SAR (trailing — przesuwa się)</span></div>
+          <div class="dir-item r"><span class="n">TP.</span><span>Wyjdź gdy SAR przeskakuje pod cenę</span></div>
+        </div>
+      </div>
+      <div class="note" style="border-color:var(--pink)">🔑 <strong>Najważniejsza zasada:</strong> Jeśli ADX &lt; 20 — nie wchodź nawet jeśli SAR daje sygnał. Czekaj aż ADX przekroczy 25. Cierpliwość = zysk.</div>
+    </div>
+    <div class="card" style="--c:#ff6eb4">
+      <div class="card-label">Checklist sygnału</div>
+      <div class="dir-btns"><div class="db" id="p0bl" onclick="sd(0,'long')">▲ LONG</div><div class="db" id="p0bs" onclick="sd(0,'short')">▼ SHORT</div></div>
+      <div class="checklist" id="p0cl">
+        <div class="chk-row" onclick="tc(0,0)"><div class="chk-dot" id="p0d0"></div><span class="chk-label" id="p0l0">ADX powyżej 25 (trend istnieje)</span></div>
+        <div class="chk-row" onclick="tc(0,1)"><div class="chk-dot" id="p0d1"></div><span class="chk-label" id="p0l1">+DI przecina -DI od dołu w górę</span></div>
+        <div class="chk-row" onclick="tc(0,2)"><div class="chk-dot" id="p0d2"></div><span class="chk-label" id="p0l2">SAR kropki poniżej ceny</span></div>
+        <div class="chk-row" onclick="tc(0,3)"><div class="chk-dot" id="p0d3"></div><span class="chk-label" id="p0l3">Cena powyżej SAR przez min. 2 świece</span></div>
+      </div>
+      <div class="counter" id="p0ct"><div class="cdot" id="p0c0"></div><div class="cdot" id="p0c1"></div><div class="cdot" id="p0c2"></div><div class="cdot" id="p0c3"></div></div>
+      <div class="verdict" id="p0v"><div class="v-lbl">Sygnał</div><div class="v-txt" id="p0vt">— Wybierz kierunek —</div></div>
+      <button class="reset-btn" onclick="rs(0)">↺ Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PANEL 2: KELTNER CHANNEL + MOMENTUM ===== -->
+<div class="panel" id="p1">
+  <div class="pgrid">
+    <div class="card full" style="--c:#00d4d4">
+      <div class="card-label">Opis strategii</div>
+      <div class="info-row"><span class="info-icon">📖</span><span class="info-text"><strong>Keltner Channel + Momentum — Breakout z Przyspieszeniem</strong><br>Keltner Channel to "koperta" oparta na ATR (nie odchyleniu standardowym jak BB). Gdy cena wychodzi poza kanał — to silny breakout. Wskaźnik Momentum potwierdza że ruch ma energię. Razem wykrywają naprawdę silne wybicia z bardzo dobrym RR.</span></div>
+      <div class="info-row"><span class="info-icon">⏱</span><span class="info-text"><strong>Timeframe:</strong><br>
+        <span class="tf-badge tf-best">15MIN ✓✓✓</span>
+        <span class="tf-badge tf-best">1H ✓✓✓</span>
+        <span class="tf-badge tf-best">4H ✓✓✓</span>
+        <span class="tf-badge tf-ok">5MIN ✓✓</span>
+        <span class="tf-badge tf-ok">DAILY ✓</span>
+      </span></div>
+      <div class="info-row"><span class="info-icon">🔧</span><span class="info-text"><strong>Ustawienia:</strong> Keltner Channel(20, 2.0, ATR14). Momentum(10) — mierzy różnicę między aktualną ceną a ceną sprzed 10 świec. Wartość powyżej 0 = przyspieszenie wzrostowe.</span></div>
+      <div class="info-row"><span class="info-icon">💡</span><span class="info-text"><strong>Bonus — Squeeze:</strong> Gdy Keltner Channel jest wąski (małe ATR) przez kilka świec — rynek "ładuje energię". Po wyjściu z kanału z dużym Momentum = bardzo silny sygnał.</span></div>
+      <div class="ind-chips">
+        <span class="chip" style="border-color:var(--teal);color:var(--teal)">Keltner Channel(20,2)</span>
+        <span class="chip" style="border-color:var(--blue);color:var(--blue)">Momentum(10)</span>
+        <span class="chip" style="border-color:var(--muted);color:var(--muted)">ATR(14)</span>
+      </div>
+    </div>
+    <div class="card" style="--c:#00d4d4">
+      <div class="card-label">Kiedy wchodzić</div>
+      <div class="dir-cards">
+        <div class="dir-card long">
+          <div class="dir-title g">▲ LONG (breakout górny)</div>
+          <div class="dir-item g"><span class="n">1.</span><span>Świeca zamknęła się POWYŻEJ górnej linii Keltner</span></div>
+          <div class="dir-item g"><span class="n">2.</span><span>Momentum powyżej 0 i rosnący</span></div>
+          <div class="dir-item g"><span class="n">3.</span><span>Wolumen przy świecy breakout wyższy niż średni</span></div>
+          <div class="dir-item g"><span class="n">SL.</span><span>Środkowa linia Keltner (EMA20)</span></div>
+          <div class="dir-item g"><span class="n">TP.</span><span>1.5–2× szerokość kanału powyżej breakout</span></div>
+        </div>
+        <div class="dir-card short">
+          <div class="dir-title r">▼ SHORT (breakout dolny)</div>
+          <div class="dir-item r"><span class="n">1.</span><span>Świeca zamknęła się PONIŻEJ dolnej linii Keltner</span></div>
+          <div class="dir-item r"><span class="n">2.</span><span>Momentum poniżej 0 i malejący</span></div>
+          <div class="dir-item r"><span class="n">3.</span><span>Wolumen przy świecy breakout wyższy niż średni</span></div>
+          <div class="dir-item r"><span class="n">SL.</span><span>Środkowa linia Keltner (EMA20)</span></div>
+          <div class="dir-item r"><span class="n">TP.</span><span>1.5–2× szerokość kanału poniżej breakout</span></div>
+        </div>
+      </div>
+      <div class="note" style="border-color:var(--teal)">⚡ <strong>Różnica Keltner vs Bollinger:</strong> BB używa odchylenia standardowego — reaguje mocno na nagłe skoki. Keltner używa ATR — bardziej stabilny, mniej fałszywych sygnałów przy gwałtownych świecach. Na trend following Keltner jest lepszy.</div>
+    </div>
+    <div class="card" style="--c:#00d4d4">
+      <div class="card-label">Checklist sygnału</div>
+      <div class="dir-btns"><div class="db" id="p1bl" onclick="sd(1,'long')">▲ LONG</div><div class="db" id="p1bs" onclick="sd(1,'short')">▼ SHORT</div></div>
+      <div class="checklist" id="p1cl">
+        <div class="chk-row" onclick="tc(1,0)"><div class="chk-dot" id="p1d0"></div><span class="chk-label" id="p1l0">Świeca zamknęła się powyżej górnej linii Keltner</span></div>
+        <div class="chk-row" onclick="tc(1,1)"><div class="chk-dot" id="p1d1"></div><span class="chk-label" id="p1l1">Momentum powyżej 0 i rosnący</span></div>
+        <div class="chk-row" onclick="tc(1,2)"><div class="chk-dot" id="p1d2"></div><span class="chk-label" id="p1l2">Wolumen wyższy niż średni</span></div>
+      </div>
+      <div class="counter" id="p1ct"><div class="cdot" id="p1c0"></div><div class="cdot" id="p1c1"></div><div class="cdot" id="p1c2"></div></div>
+      <div class="verdict" id="p1v"><div class="v-lbl">Sygnał</div><div class="v-txt" id="p1vt">— Wybierz kierunek —</div></div>
+      <button class="reset-btn" onclick="rs(1)">↺ Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PANEL 3: MFI + OBV ===== -->
+<div class="panel" id="p2">
+  <div class="pgrid">
+    <div class="card full" style="--c:#0099ff">
+      <div class="card-label">Opis strategii</div>
+      <div class="info-row"><span class="info-icon">📖</span><span class="info-text"><strong>MFI + OBV — Śledzenie Smart Money</strong><br>Money Flow Index (MFI) = RSI ale z wolumenem — pokazuje czy przy ruchu ceny jest prawdziwy przepływ pieniędzy. OBV (On Balance Volume) kumuluje wolumen — rosnący OBV = instytucje kupują cicho. Gdy oba wskazują ten sam kierunek co cena = bardzo wiarygodny sygnał.</span></div>
+      <div class="info-row"><span class="info-icon">⏱</span><span class="info-text"><strong>Timeframe:</strong><br>
+        <span class="tf-badge tf-best">1H ✓✓✓</span>
+        <span class="tf-badge tf-best">4H ✓✓✓</span>
+        <span class="tf-badge tf-best">DAILY ✓✓✓</span>
+        <span class="tf-badge tf-ok">15MIN ✓✓</span>
+        <span class="tf-badge tf-bad">5MIN ✗</span>
+      </span></div>
+      <div class="info-row"><span class="info-icon">🔧</span><span class="info-text"><strong>MFI(14):</strong> Powyżej 80 = wykupiony. Poniżej 20 = wyprzedany. Dywergencja MFI vs cena = silny sygnał odwrócenia.</span></div>
+      <div class="info-row"><span class="info-icon">💡</span><span class="info-text"><strong>OBV dywergencja — złoty sygnał:</strong> Cena spada ale OBV rośnie = instytucje kupują mimo spadków (akumulacja). Wkrótce cena pójdzie w górę. To jeden z najsilniejszych sygnałów wyprzedzających.</span></div>
+      <div class="ind-chips">
+        <span class="chip" style="border-color:var(--blue);color:var(--blue)">Money Flow Index(14)</span>
+        <span class="chip" style="border-color:var(--green);color:var(--green)">On Balance Volume</span>
+      </div>
+    </div>
+    <div class="card" style="--c:#0099ff">
+      <div class="card-label">Kiedy wchodzić</div>
+      <div class="dir-cards">
+        <div class="dir-card long">
+          <div class="dir-title g">▲ LONG (akumulacja)</div>
+          <div class="dir-item g"><span class="n">1.</span><span>MFI poniżej 20 (wyprzedany) lub wychodzi z &lt;20 w górę</span></div>
+          <div class="dir-item g"><span class="n">2.</span><span>OBV rośnie lub tworzy wyższe dołki (akumulacja)</span></div>
+          <div class="dir-item g"><span class="n">3.</span><span>Dywergencja: cena niżej ale OBV wyżej niż poprzednio</span></div>
+          <div class="dir-item g"><span class="n">SL.</span><span>Poniżej ostatniego dołka cenowego</span></div>
+          <div class="dir-item g"><span class="n">TP.</span><span>Gdy MFI przekroczy 60 lub OBV zacznie spadać</span></div>
+        </div>
+        <div class="dir-card short">
+          <div class="dir-title r">▼ SHORT (dystrybucja)</div>
+          <div class="dir-item r"><span class="n">1.</span><span>MFI powyżej 80 (wykupiony) lub spada z &gt;80</span></div>
+          <div class="dir-item r"><span class="n">2.</span><span>OBV spada lub tworzy niższe szczyty (dystrybucja)</span></div>
+          <div class="dir-item r"><span class="n">3.</span><span>Dywergencja: cena wyżej ale OBV niżej niż poprzednio</span></div>
+          <div class="dir-item r"><span class="n">SL.</span><span>Powyżej ostatniego szczytu cenowego</span></div>
+          <div class="dir-item r"><span class="n">TP.</span><span>Gdy MFI spadnie poniżej 40 lub OBV zacznie rosnąć</span></div>
+        </div>
+      </div>
+      <div class="note" style="border-color:var(--blue)">🏦 <strong>Dlaczego OBV wykrywa instytucje:</strong> Duże fundusze nie mogą kupić milionów akcji naraz — podzieliłyby rynek. Kupują stopniowo przez dni/tygodnie. OBV rośnie cicho zanim cena eksploduje. Dywergencja OBV vs cena = "wyciek informacji" o tym co robią duzi.</div>
+    </div>
+    <div class="card" style="--c:#0099ff">
+      <div class="card-label">Checklist sygnału</div>
+      <div class="dir-btns"><div class="db" id="p2bl" onclick="sd(2,'long')">▲ LONG</div><div class="db" id="p2bs" onclick="sd(2,'short')">▼ SHORT</div></div>
+      <div class="checklist" id="p2cl">
+        <div class="chk-row" onclick="tc(2,0)"><div class="chk-dot" id="p2d0"></div><span class="chk-label" id="p2l0">MFI poniżej 20 lub wychodzi z strefy wyprzedania</span></div>
+        <div class="chk-row" onclick="tc(2,1)"><div class="chk-dot" id="p2d1"></div><span class="chk-label" id="p2l1">OBV rośnie (akumulacja)</span></div>
+        <div class="chk-row" onclick="tc(2,2)"><div class="chk-dot" id="p2d2"></div><span class="chk-label" id="p2l2">Dywergencja: cena niżej, OBV wyżej</span></div>
+      </div>
+      <div class="counter" id="p2ct"><div class="cdot" id="p2c0"></div><div class="cdot" id="p2c1"></div><div class="cdot" id="p2c2"></div></div>
+      <div class="verdict" id="p2v"><div class="v-lbl">Sygnał</div><div class="v-txt" id="p2vt">— Wybierz kierunek —</div></div>
+      <button class="reset-btn" onclick="rs(2)">↺ Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PANEL 4: DONCHIAN + WILLIAMS %R ===== -->
+<div class="panel" id="p3">
+  <div class="pgrid">
+    <div class="card full" style="--c:#ffc94d">
+      <div class="card-label">Opis strategii</div>
+      <div class="info-row"><span class="info-icon">📖</span><span class="info-text"><strong>Donchian Channel + Williams %R — Turtle Traders System</strong><br>Ta strategia pochodzi z lat 80 — Richard Dennis postawił $1M że może nauczyć losowe osoby tradingu. Nauczył ich Donchian Channel. "Żółwie" (Turtles) zarobili setki milionów dolarów. Donchian = kanał najwyższego High i najniższego Low z ostatnich N świec. Przebicie = wejście.</span></div>
+      <div class="info-row"><span class="info-icon">⏱</span><span class="info-text"><strong>Timeframe:</strong><br>
+        <span class="tf-badge tf-best">DAILY ✓✓✓</span>
+        <span class="tf-badge tf-best">4H ✓✓✓</span>
+        <span class="tf-badge tf-ok">1H ✓✓</span>
+        <span class="tf-badge tf-bad">15MIN ✗</span>
+        <span class="tf-badge tf-bad">5MIN ✗</span>
+      </span></div>
+      <div class="info-row"><span class="info-icon">🔧</span><span class="info-text"><strong>Ustawienia:</strong> Donchian(20) — kanał z 20 świec. Williams %R(14) — mierzy gdzie cena jest w stosunku do zakresu, skala -100 do 0. Powyżej -20 = wykupiony. Poniżej -80 = wyprzedany.</span></div>
+      <div class="info-row"><span class="info-icon">📖</span><span class="info-text"><strong>Historia:</strong> Oryginalne Turtle Trading używało Donchian(20) na wejście i Donchian(10) na wyjście. Williams %R dodajemy jako nowoczesny filtr — żeby nie wchodzić gdy rynek jest już w ekstremalnej pozycji.</span></div>
+      <div class="ind-chips">
+        <span class="chip" style="border-color:var(--yellow);color:var(--yellow)">Donchian Channel(20)</span>
+        <span class="chip" style="border-color:var(--orange);color:var(--orange)">Williams %R(14)</span>
+      </div>
+    </div>
+    <div class="card" style="--c:#ffc94d">
+      <div class="card-label">Kiedy wchodzić</div>
+      <div class="dir-cards">
+        <div class="dir-card long">
+          <div class="dir-title g">▲ LONG (Turtle Breakout)</div>
+          <div class="dir-item g"><span class="n">1.</span><span>Cena przebija GÓRNĄ linię Donchian (nowe 20-świecowe high)</span></div>
+          <div class="dir-item g"><span class="n">2.</span><span>Williams %R między -50 a -20 (nie wykupiony)</span></div>
+          <div class="dir-item g"><span class="n">3.</span><span>Poprzedni breakout w tym kierunku był nieudany (false breakout filter)</span></div>
+          <div class="dir-item g"><span class="n">SL.</span><span>Dolna linia Donchian(10) — krótszy kanał wyjścia</span></div>
+          <div class="dir-item g"><span class="n">TP.</span><span>Trailing — wyjdź gdy cena przebije Donchian(10) od góry</span></div>
+        </div>
+        <div class="dir-card short">
+          <div class="dir-title r">▼ SHORT (Turtle Breakout)</div>
+          <div class="dir-item r"><span class="n">1.</span><span>Cena przebija DOLNĄ linię Donchian (nowe 20-świecowe low)</span></div>
+          <div class="dir-item r"><span class="n">2.</span><span>Williams %R między -80 a -50 (nie wyprzedany)</span></div>
+          <div class="dir-item r"><span class="n">3.</span><span>Poprzedni breakout w tym kierunku był nieudany</span></div>
+          <div class="dir-item r"><span class="n">SL.</span><span>Górna linia Donchian(10)</span></div>
+          <div class="dir-item r"><span class="n">TP.</span><span>Trailing — wyjdź gdy cena przebije Donchian(10) od dołu</span></div>
+        </div>
+      </div>
+      <div class="note" style="border-color:var(--yellow)">🐢 <strong>Filozofia Turtles:</strong> Nie próbuj przewidzieć rynku — podążaj za nim. Wejdź gdy rynek robi nowe ekstrema. Większość transakcji będzie stratna (małe straty), ale kilka złapie naprawdę duże trendy (duże zyski). RR 1:3 lub lepiej.</div>
+    </div>
+    <div class="card" style="--c:#ffc94d">
+      <div class="card-label">Checklist sygnału</div>
+      <div class="dir-btns"><div class="db" id="p3bl" onclick="sd(3,'long')">▲ LONG</div><div class="db" id="p3bs" onclick="sd(3,'short')">▼ SHORT</div></div>
+      <div class="checklist" id="p3cl">
+        <div class="chk-row" onclick="tc(3,0)"><div class="chk-dot" id="p3d0"></div><span class="chk-label" id="p3l0">Cena przebiła górną linię Donchian(20)</span></div>
+        <div class="chk-row" onclick="tc(3,1)"><div class="chk-dot" id="p3d1"></div><span class="chk-label" id="p3l1">Williams %R między -50 a -20 (nie wykupiony)</span></div>
+        <div class="chk-row" onclick="tc(3,2)"><div class="chk-dot" id="p3d2"></div><span class="chk-label" id="p3l2">Poprzedni sygnał w tym kierunku był nieudany (filtr)</span></div>
+      </div>
+      <div class="counter" id="p3ct"><div class="cdot" id="p3c0"></div><div class="cdot" id="p3c1"></div><div class="cdot" id="p3c2"></div></div>
+      <div class="verdict" id="p3v"><div class="v-lbl">Sygnał</div><div class="v-txt" id="p3vt">— Wybierz kierunek —</div></div>
+      <button class="reset-btn" onclick="rs(3)">↺ Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PANEL 5: CCI + RATE OF CHANGE ===== -->
+<div class="panel" id="p4">
+  <div class="pgrid">
+    <div class="card full" style="--c:#b06aff">
+      <div class="card-label">Opis strategii</div>
+      <div class="info-row"><span class="info-icon">📖</span><span class="info-text"><strong>CCI + Rate of Change — Cykliczność i Przyspieszenie</strong><br>CCI (Commodity Channel Index) mierzy odchylenie ceny od jej statystycznej średniej — wykrywa cykliczne szczyty i dołki. Rate of Change (ROC) mierzy procentową zmianę ceny w czasie — wykrywa przyspieszenie ruchu. Razem łapią momenty gdy cykl się odwraca z rosnącym przyspieszeniem.</span></div>
+      <div class="info-row"><span class="info-icon">⏱</span><span class="info-text"><strong>Timeframe:</strong><br>
+        <span class="tf-badge tf-best">15MIN ✓✓✓</span>
+        <span class="tf-badge tf-best">1H ✓✓✓</span>
+        <span class="tf-badge tf-best">4H ✓✓✓</span>
+        <span class="tf-badge tf-ok">5MIN ✓✓</span>
+        <span class="tf-badge tf-ok">DAILY ✓</span>
+      </span></div>
+      <div class="info-row"><span class="info-icon">🔧</span><span class="info-text"><strong>CCI(20):</strong> Powyżej +100 = wykupiony (cena mocno powyżej średniej). Poniżej -100 = wyprzedany. Przejście przez zero = zmiana kierunku. <strong>ROC(12):</strong> Powyżej 0 = cena rośnie szybciej. Poniżej 0 = cena spada szybciej.</span></div>
+      <div class="info-row"><span class="info-icon">💡</span><span class="info-text"><strong>Najlepszy setup:</strong> CCI wychodzi z ekstremalnej strefy (&lt;-100 lub &gt;+100) z powrotem przez zero RAZEM z ROC zmieniającym znak. To podwójne potwierdzenie zmiany cyklu.</span></div>
+      <div class="ind-chips">
+        <span class="chip" style="border-color:var(--purple);color:var(--purple)">CCI(20)</span>
+        <span class="chip" style="border-color:var(--blue);color:var(--blue)">Rate of Change(12)</span>
+      </div>
+    </div>
+    <div class="card" style="--c:#b06aff">
+      <div class="card-label">Kiedy wchodzić</div>
+      <div class="dir-cards">
+        <div class="dir-card long">
+          <div class="dir-title g">▲ LONG (cykl wzrostowy)</div>
+          <div class="dir-item g"><span class="n">1.</span><span>CCI był poniżej -100 i teraz wychodzi powyżej -100</span></div>
+          <div class="dir-item g"><span class="n">2.</span><span>ROC przekracza 0 od dołu (przyspieszenie wzrostowe)</span></div>
+          <div class="dir-item g"><span class="n">3.</span><span>CCI zmierza w kierunku 0 lub wyżej</span></div>
+          <div class="dir-item g"><span class="n">SL.</span><span>Poniżej ostatniego dołka, 1.5× ATR</span></div>
+          <div class="dir-item g"><span class="n">TP.</span><span>Gdy CCI przekroczy +100 (strefa wykupienia)</span></div>
+        </div>
+        <div class="dir-card short">
+          <div class="dir-title r">▼ SHORT (cykl spadkowy)</div>
+          <div class="dir-item r"><span class="n">1.</span><span>CCI był powyżej +100 i teraz spada poniżej +100</span></div>
+          <div class="dir-item r"><span class="n">2.</span><span>ROC przekracza 0 od góry (przyspieszenie spadkowe)</span></div>
+          <div class="dir-item r"><span class="n">3.</span><span>CCI zmierza w kierunku 0 lub niżej</span></div>
+          <div class="dir-item r"><span class="n">SL.</span><span>Powyżej ostatniego szczytu, 1.5× ATR</span></div>
+          <div class="dir-item r"><span class="n">TP.</span><span>Gdy CCI spadnie poniżej -100 (strefa wyprzedania)</span></div>
+        </div>
+      </div>
+      <div class="note" style="border-color:var(--purple)">🌀 <strong>Filozofia CCI:</strong> Ceny poruszają się cyklicznie wokół swojej średniej. CCI mierzy jak daleko jesteś od "normalności" — gdy za daleko, rynek wróci. ROC potwierdza że powrót już się zaczął i ma momentum.</div>
+    </div>
+    <div class="card" style="--c:#b06aff">
+      <div class="card-label">Checklist sygnału</div>
+      <div class="dir-btns"><div class="db" id="p4bl" onclick="sd(4,'long')">▲ LONG</div><div class="db" id="p4bs" onclick="sd(4,'short')">▼ SHORT</div></div>
+      <div class="checklist" id="p4cl">
+        <div class="chk-row" onclick="tc(4,0)"><div class="chk-dot" id="p4d0"></div><span class="chk-label" id="p4l0">CCI wychodził z poniżej -100 i wraca powyżej -100</span></div>
+        <div class="chk-row" onclick="tc(4,1)"><div class="chk-dot" id="p4d1"></div><span class="chk-label" id="p4l1">ROC przekracza 0 od dołu (przyspieszenie wzrostowe)</span></div>
+        <div class="chk-row" onclick="tc(4,2)"><div class="chk-dot" id="p4d2"></div><span class="chk-label" id="p4l2">CCI zmierza w kierunku 0 lub wyżej</span></div>
+      </div>
+      <div class="counter" id="p4ct"><div class="cdot" id="p4c0"></div><div class="cdot" id="p4c1"></div><div class="cdot" id="p4c2"></div></div>
+      <div class="verdict" id="p4v"><div class="v-lbl">Sygnał</div><div class="v-txt" id="p4vt">— Wybierz kierunek —</div></div>
+      <button class="reset-btn" onclick="rs(4)">↺ Reset</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const tabColors = ['#ff6eb4','#00d4d4','#0099ff','#ffc94d','#b06aff'];
+  const numChecks = [4,3,3,3,3];
+
+  const longLabels = [
+    ['ADX powyżej 25 (trend istnieje)','+DI przecina -DI od dołu w górę','SAR kropki poniżej ceny','Cena powyżej SAR przez min. 2 świece'],
+    ['Świeca zamknęła się powyżej górnej linii Keltner','Momentum powyżej 0 i rosnący','Wolumen wyższy niż średni'],
+    ['MFI poniżej 20 lub wychodzi z strefy wyprzedania','OBV rośnie (akumulacja)','Dywergencja: cena niżej, OBV wyżej'],
+    ['Cena przebiła górną linię Donchian(20)','Williams %R między -50 a -20 (nie wykupiony)','Poprzedni sygnał w tym kierunku był nieudany (filtr)'],
+    ['CCI wychodził z poniżej -100 i wraca powyżej -100','ROC przekracza 0 od dołu (przyspieszenie wzrostowe)','CCI zmierza w kierunku 0 lub wyżej'],
+  ];
+
+  const shortLabels = [
+    ['ADX powyżej 25 (trend istnieje)','-DI przecina +DI od dołu w górę','SAR kropki powyżej ceny','Cena poniżej SAR przez min. 2 świece'],
+    ['Świeca zamknęła się poniżej dolnej linii Keltner','Momentum poniżej 0 i malejący','Wolumen wyższy niż średni'],
+    ['MFI powyżej 80 lub spada z strefy wykupienia','OBV spada (dystrybucja)','Dywergencja: cena wyżej, OBV niżej'],
+    ['Cena przebiła dolną linię Donchian(20)','Williams %R między -80 a -50 (nie wyprzedany)','Poprzedni sygnał w tym kierunku był nieudany (filtr)'],
+    ['CCI był powyżej +100 i spada poniżej +100','ROC przekracza 0 od góry (przyspieszenie spadkowe)','CCI zmierza w kierunku 0 lub niżej'],
+  ];
+
+  let state = Array.from({length:5}, (_,i) => ({ dir:null, checks:Array(numChecks[i]).fill(false) }));
+
+  function toggleADX() {
+    const body = document.getElementById('adxBody');
+    const arrow = document.getElementById('adxArrow');
+    body.classList.toggle('open');
+    arrow.classList.toggle('open');
+  }
+
+  function switchTab(n) {
+    document.querySelectorAll('.tab').forEach((t,i) => {
+      if(i===n) { t.className='tab active'; t.style.background=tabColors[n]; t.style.color='#0a0c0f'; }
+      else { t.className='tab'; t.style.background=''; t.style.color=''; }
+    });
+    document.querySelectorAll('.panel').forEach((p,i) => p.className='panel'+(i===n?' active':''));
+  }
+
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    if(i===0) { t.style.background=tabColors[0]; t.style.color='#0a0c0f'; }
+  });
+
+  function sd(p,dir) {
+    state[p].dir=dir; state[p].checks.fill(false);
+    document.getElementById('p'+p+'bl').className='db'+(dir==='long'?' al':'');
+    document.getElementById('p'+p+'bs').className='db'+(dir==='short'?' as':'');
+    const labels=dir==='long'?longLabels[p]:shortLabels[p];
+    for(let i=0;i<numChecks[p];i++) {
+      document.getElementById('p'+p+'l'+i).textContent=labels[i];
+      document.getElementById('p'+p+'d'+i).style.background='';
+      document.getElementById('p'+p+'d'+i).style.boxShadow='';
+      document.querySelectorAll('#p'+p+'cl .chk-row')[i].className='chk-row';
+    }
+    render(p);
+  }
+
+  function tc(p,i) {
+    if(!state[p].dir) return;
+    state[p].checks[i]=!state[p].checks[i];
+    const on=state[p].checks[i], isS=state[p].dir==='short';
+    const dot=document.getElementById('p'+p+'d'+i);
+    const row=document.querySelectorAll('#p'+p+'cl .chk-row')[i];
+    if(on) {
+      dot.style.background=isS?'var(--red)':'var(--green)';
+      dot.style.boxShadow=isS?'0 0 8px rgba(255,68,102,0.5)':'0 0 8px rgba(0,229,160,0.5)';
+      row.className='chk-row '+(isS?'on-s':'on');
+    } else {
+      dot.style.background=''; dot.style.boxShadow=''; row.className='chk-row';
+    }
+    render(p);
+  }
+
+  function render(p) {
+    const {dir,checks}=state[p], n=numChecks[p];
+    const count=checks.filter(Boolean).length, all=count===n, isS=dir==='short';
+    for(let i=0;i<n;i++) {
+      const cd=document.getElementById('p'+p+'c'+i);
+      cd.className='cdot'+(checks[i]?(isS?' fs':' fl'):'');
+    }
+    const v=document.getElementById('p'+p+'v'), vt=document.getElementById('p'+p+'vt');
+    if(!dir) { v.className='verdict'; vt.textContent='— Wybierz kierunek —'; }
+    else if(all) { v.className='verdict '+(isS?'vs':'vl'); vt.textContent=isS?'▼ WEJDŹ SHORT':'▲ WEJDŹ LONG'; }
+    else if(count>0) { v.className='verdict vw'; vt.textContent='CZEKAJ — '+count+'/'+n; }
+    else { v.className='verdict'; vt.textContent='— Zaznacz potwierdzenia —'; }
+  }
+
+  function rs(p) {
+    state[p]={dir:null,checks:Array(numChecks[p]).fill(false)};
+    document.getElementById('p'+p+'bl').className='db';
+    document.getElementById('p'+p+'bs').className='db';
+    for(let i=0;i<numChecks[p];i++) {
+      document.getElementById('p'+p+'d'+i).style.background='';
+      document.getElementById('p'+p+'d'+i).style.boxShadow='';
+      document.querySelectorAll('#p'+p+'cl .chk-row')[i].className='chk-row';
+      document.getElementById('p'+p+'l'+i).textContent=longLabels[p][i];
+    }
+    render(p);
+  }
+</script>
+</body>
+</html>
